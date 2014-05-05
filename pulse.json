@@ -1,0 +1,17 @@
+{
+    "speed": 0,
+    "batteryState": "charging",
+    "sudid": "F4D4D3F1-9999-9999-9999-B0A88B846623",
+    "timestamp": 1397222000,
+    "motion": [],
+    "longitude": -20.0,
+    "horizontalAccuracy": 10,
+    "latitude": 20.0,
+    "verticalAccuracy": 10,
+    "batteryLevel": "60",
+    "altitude": 10,
+    "deviceName": "mochaPhone",
+    "createdAt": 1397222000000,
+    "updatedAt": 1397222000000,
+    "_id": "5347ec1cc311731e21c75ce0"
+}
