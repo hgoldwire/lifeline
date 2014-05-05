@@ -8,23 +8,21 @@ import play.api.libs.functional.syntax._ // Combinator syntax
 /**
 * Created by henry.goldwire on 5/5/14.
 */
-case class Pulse(deviceName: String, sudid: String, location: Location)
+case class Pulse(guid: String, deviceName: String, location: Option[Location])
 
 object Pulse {
 
   implicit val pulseWrites: Writes[Pulse] = (
     (JsPath \ "deviceName").write[String] and
-      (JsPath \ "sudid").write[String] and
-      (JsPath \ "location").write[Location]
+      (JsPath \ "guid").write[String] and
+      (JsPath \ "location").writeNullable[Location]
     )(unlift(Pulse.unapply))
 
   implicit val pulseReads: Reads[Pulse] = (
     (JsPath \ "deviceName").read[String] and
-      (JsPath \ "sudid").read[String] and
-      (JsPath \ "location").read[Location]
+      (JsPath \ "guid").read[String] and
+      (JsPath \ "location").readNullable[Location]
     )(Pulse.apply _)
-
-//  implicit val pulseReads: Reads[Pulse] = (JsPath \ "deviceName").read[String] and (JsPath \ "sudid").read[String]
 
   var locationList: List[Location] = {
     List(
@@ -35,8 +33,8 @@ object Pulse {
 
   var list: List[Pulse] = {
     List(
-      Pulse("device1", "sudid1", locationList(0)),
-      Pulse("device2", "sudid2", locationList(1))
+      Pulse("device1", "guid1", Some(locationList(0))),
+      Pulse("device2", "guid2", None)
     )
   }
 
