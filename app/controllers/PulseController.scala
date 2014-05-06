@@ -1,7 +1,7 @@
 package controllers
 
 import models._
-import models.Pulse.{nestedPulseReads, normalPulseReads}
+import models.Pulse.pulseReads
 import play.api.db.slick._
 import play.api.db.slick.Config.driver.simple._
 import play.api.mvc._
@@ -26,22 +26,14 @@ object PulseController extends Controller {
 
   def savePulse = DBAction(BodyParsers.parse.json) {
     implicit request =>
-      request.body.validate[Pulse](normalPulseReads).fold(
-        errorsNormal => {
-          request.body.validate[Pulse](nestedPulseReads).fold(
-            errorsNested => {
-              BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errorsNested)))
-            },
-            pulseNested => {
-              Pulses.insert(pulseNested)
-              Ok(Json.toJson(pulseNested))
-            })
+      request.body.validate[Pulse](pulseReads).fold(
+        errors => {
+          println(request.body)
+          BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
         },
-        pulseNormal => {
-          Pulses.insert(pulseNormal)
-          Ok(Json.toJson(pulseNormal))
-        }
-      )
+        pulse => {
+          Pulses.insert(pulse)
+          Ok(Json.toJson(pulse))
+        })
   }
-
 }
