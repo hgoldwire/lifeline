@@ -1,15 +1,12 @@
 package controllers
 
 import models._
-import play.api._
 import play.api.db.slick._
 import play.api.db.slick.Config.driver.simple._
-import play.api.data._
-import play.api.data.Forms._
 import play.api.mvc._
 import play.api.Play.current
-import play.api.mvc.BodyParsers._
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 import play.api.libs.json.Json._
 
 
@@ -25,24 +22,41 @@ object PulseController extends Controller {
       Ok(toJson(Pulses.list))
   }
 
-  //  def listPulses() = Action {
-  //    val json = Json.toJson(Pulses.list)
-  //    Ok(json)
-  //  }
+  implicit val normalPulseReads: Reads[Pulse] = (
+    (JsPath \ "deviceName").read[String] and
+      (JsPath \ "sudid").read[String] and
+      (JsPath \ "latitude").read[Double] and
+      (JsPath \ "longitude").read[Double] and
+      (JsPath \ "altitude").read[Int] and
+      (JsPath \ "horizontalAccuracy").read[Int] and
+      (JsPath \ "verticalAccuracy").read[Int]
+    )((deviceName, sudid, latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) => Pulse(deviceName, sudid, Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)))
+
+  implicit val nestedPulseReads: Reads[Pulse] = (
+    (JsPath \ "deviceName").read[String] and
+      (JsPath \ "sudid").read[String] and
+      (JsPath \ "location").read[Location]
+    )(Pulse.apply _)
 
 
   def savePulse = DBAction(BodyParsers.parse.json) {
     implicit request =>
-        val pulseResult = request.body.validate[Pulse]
-        pulseResult.fold(
-          errors => {
-            BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
-          },
-          pulse => {
-            Pulses.insert(pulse)
-            Ok(Json.toJson(pulse))
-          }
-        )
+      request.body.validate[Pulse](normalPulseReads).fold(
+        errorsNormal => {
+          request.body.validate[Pulse](nestedPulseReads).fold(
+            errorsNested => {
+              BadRequest(Json.obj("status" ->"KO", "message" -> JsError.toFlatJson(errorsNested)))
+            },
+            pulseNested => {
+              Pulses.insert(pulseNested)
+              Ok(Json.toJson(pulseNested))
+            })
+        },
+        pulseNormal => {
+          Pulses.insert(pulseNormal)
+          Ok(Json.toJson(pulseNormal))
+        }
+      )
   }
 
 }

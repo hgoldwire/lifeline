@@ -3,7 +3,7 @@
 
 # --- !Ups
 
-create table "PULSE" ("guid" VARCHAR NOT NULL PRIMARY KEY,"device_name" VARCHAR NOT NULL,"latitude" DOUBLE NOT NULL,"longitude" DOUBLE NOT NULL,"altitude" INTEGER NOT NULL,"horizontal_accuracy" INTEGER NOT NULL,"vertical_accuracy" INTEGER NOT NULL);
+create table "PULSE" ("guid" VARCHAR NOT NULL,"device_name" VARCHAR NOT NULL,"latitude" DOUBLE NOT NULL,"longitude" DOUBLE NOT NULL,"altitude" INTEGER NOT NULL,"horizontal_accuracy" INTEGER NOT NULL,"vertical_accuracy" INTEGER NOT NULL);
 
 # --- !Downs
 

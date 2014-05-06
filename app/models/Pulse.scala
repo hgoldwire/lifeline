@@ -18,17 +18,11 @@ object Pulse {
       (JsPath \ "sudid").write[String] and
       (JsPath \ "location").write[Location]
     )(unlift(Pulse.unapply))
-
-  implicit val pulseReads: Reads[Pulse] = (
-    (JsPath \ "deviceName").read[String] and
-      (JsPath \ "sudid").read[String] and
-      (__).read[Location]
-    )(Pulse.apply _)
 }
 
 class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
-  def sudid = column[String]("guid", O.PrimaryKey)
+  def sudid = column[String]("guid")
 
   def deviceName = column[String]("device_name")
 
