@@ -1,6 +1,7 @@
 package controllers
 
 import models._
+import models.Pulse.{nestedPulseReads, normalPulseReads}
 import play.api.db.slick._
 import play.api.db.slick.Config.driver.simple._
 import play.api.mvc._
@@ -22,22 +23,6 @@ object PulseController extends Controller {
       Ok(toJson(Pulses.list))
   }
 
-  implicit val normalPulseReads: Reads[Pulse] = (
-    (JsPath \ "deviceName").read[String] and
-      (JsPath \ "sudid").read[String] and
-      (JsPath \ "latitude").read[Double] and
-      (JsPath \ "longitude").read[Double] and
-      (JsPath \ "altitude").read[Int] and
-      (JsPath \ "horizontalAccuracy").read[Int] and
-      (JsPath \ "verticalAccuracy").read[Int]
-    )((deviceName, sudid, latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) => Pulse(deviceName, sudid, Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)))
-
-  implicit val nestedPulseReads: Reads[Pulse] = (
-    (JsPath \ "deviceName").read[String] and
-      (JsPath \ "sudid").read[String] and
-      (JsPath \ "location").read[Location]
-    )(Pulse.apply _)
-
 
   def savePulse = DBAction(BodyParsers.parse.json) {
     implicit request =>
@@ -45,7 +30,7 @@ object PulseController extends Controller {
         errorsNormal => {
           request.body.validate[Pulse](nestedPulseReads).fold(
             errorsNested => {
-              BadRequest(Json.obj("status" ->"KO", "message" -> JsError.toFlatJson(errorsNested)))
+              BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errorsNested)))
             },
             pulseNested => {
               Pulses.insert(pulseNested)

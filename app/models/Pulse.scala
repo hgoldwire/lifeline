@@ -13,6 +13,22 @@ case class Pulse(sudid: String, deviceName: String, location: Location)
 
 object Pulse {
 
+  val normalPulseReads: Reads[Pulse] = (
+    (JsPath \ "deviceName").read[String] and
+      (JsPath \ "sudid").read[String] and
+      (JsPath \ "latitude").read[Double] and
+      (JsPath \ "longitude").read[Double] and
+      (JsPath \ "altitude").read[Int] and
+      (JsPath \ "horizontalAccuracy").read[Int] and
+      (JsPath \ "verticalAccuracy").read[Int]
+    )((deviceName, sudid, latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) => Pulse(deviceName, sudid, Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)))
+
+  val nestedPulseReads: Reads[Pulse] = (
+    (JsPath \ "deviceName").read[String] and
+      (JsPath \ "sudid").read[String] and
+      (JsPath \ "location").read[Location]
+    )(Pulse.apply _)
+
   implicit val pulseWrites: Writes[Pulse] = (
     (JsPath \ "deviceName").write[String] and
       (JsPath \ "sudid").write[String] and
