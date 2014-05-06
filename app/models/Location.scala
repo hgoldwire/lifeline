@@ -35,6 +35,4 @@ object Location {
       (JsPath \ "horizontalAccuracy").read[Int] and
       (JsPath \ "verticalAccuracy").read[Int]
     )(Location.apply _)
-
-
 }
