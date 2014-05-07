@@ -4,6 +4,9 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.db.slick.Config.driver.simple._
+import play.api.data.validation.ValidationError
+import play.api.libs.json
+import models.Motion.{MotionWrites, MotionReads}
 
 /**
  * Created by henry.goldwire on 5/5/14.
@@ -28,12 +31,12 @@ object Pulse {
       ((JsPath \ 'batteryLevel).read[Int] orElse (__ \ 'batteryLevel).read[String].map(_.toInt))
     )(Battery.apply _)
 
-  val pulseReads: Reads[Pulse] = (
+  implicit val pulseReads: Reads[Pulse] = (
     (JsPath \ 'deviceName).read[String] and
       (JsPath \ 'sudid).read[String] and
       ((JsPath \ 'location).read[Location] orElse (unnestedLocationReads)) and
       ((JsPath \ 'battery).read[Battery] orElse (unnestedBatteryReads)) and
-      (JsPath \ 'motion).read[Motion]
+      (JsPath \ 'motion).read[Motion](MotionReads)
     )(Pulse.apply _)
 
   implicit val pulseWrites: Writes[Pulse] = (
@@ -41,8 +44,11 @@ object Pulse {
       (JsPath \ 'sudid).write[String] and
       (JsPath \ 'location).write[Location] and
       (JsPath \ 'battery).write[Battery] and
-      (JsPath \ 'motion).write[Motion]
+      (JsPath \ 'motion).write[Motion](MotionWrites)
     )(unlift(Pulse.unapply))
+
+
+
 }
 
 class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {

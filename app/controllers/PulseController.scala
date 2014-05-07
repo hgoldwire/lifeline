@@ -23,13 +23,10 @@ object PulseController extends Controller {
       Ok(toJson(Pulses.list))
   }
 
-
   def savePulse = DBAction(BodyParsers.parse.json) {
     implicit request =>
       val json = request.body
-      val transformedMotion = json.transform(models.Motion.transformer)
-      val pulseResult = transformedMotion.flatMap(json => json.validate[Pulse](pulseReads))
-      pulseResult.fold(invalid => {
+      json.validate[Pulse].fold(invalid => {
         println(request.body)
         BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(invalid)))
       }, valid => {

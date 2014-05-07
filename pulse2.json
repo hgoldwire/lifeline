@@ -1,19 +1,19 @@
 {
     "speed": 0,
     "batteryState": "charging",
-    "sudid": "F4D4D3F1-9999-9999-9999-B0A88B846623",
-    "timestamp": 1397222000,
-    "motion": [ "walking", "running", "driving" ],
-    "batteryLevel": "60",
-    "deviceName": "mochaPhone",
+    "sudid": "22222222-2222-2222-2222-22222222",
+    "timestamp": 1397222222,
+    "motion": [ "walking", "driving" ],
+    "batteryLevel": "22",
+    "deviceName": "pulse2",
     "createdAt": 1397222000000,
     "updatedAt": 1397222000000,
     "_id": "5347ec1cc311731e21c75ce0",
     "location":{
-        "latitude": 20.0,
-        "longitude": -20.0,
-        "altitude": 10,
-        "horizontalAccuracy": 10,
-        "verticalAccuracy": 10
+        "latitude": 22.2,
+        "longitude": -22.2,
+        "altitude": 22,
+        "horizontalAccuracy": 22,
+        "verticalAccuracy": 22
     } 	
 }

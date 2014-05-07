@@ -1,13 +1,14 @@
 package models
 
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
-
-// JSON library
-
-// Custom validation helpers
-
-// Combinator syntax
+import play.api.data.validation.ValidationError
+import play.api.data.validation.ValidationError
+import play.api.data.validation.ValidationError
+import play.api.data.validation.ValidationError
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsBoolean
+import play.api.data.validation.ValidationError
+import play.api.libs.json.JsSuccess
 
 
 /**
@@ -17,27 +18,21 @@ case class Motion(walking: Boolean = false, running: Boolean = false, driving: B
 
 object Motion {
 
-  def toBoolean(value: Boolean): Reads[JsValue] = {
-    Reads.of[List[String]].map(keys => Json.toJson(keys.map(_ -> value).toMap))
+  implicit object MotionReads extends Reads[Motion] {
+    def reads(json: JsValue) = json.validate[Seq[String]].fold(errors => {
+      JsError(Seq(JsPath() -> Seq(ValidationError("error.expected.jsarray"))))
+    }, motions => {
+      val isWalking = motions.contains("walking")
+      val isRunning = motions.contains("running")
+      val isDriving = motions.contains("driving")
+      JsSuccess(Motion(isWalking, isRunning, isDriving))
+    })
   }
 
-  val transformer = (__ \ 'motion).json.update(toBoolean(true))
+  implicit object MotionWrites extends Writes[Motion] {
+    def writes(motion: Motion) = {
+      JsObject(Seq(("walking", JsBoolean(motion.walking)), ("driving", JsBoolean(motion.driving)), ("running", JsBoolean(motion.running))))
+    }
+  }
 
-  val beforeJson: JsValue = Json.parse( """{"motion": ["walking", "running"]}""")
-  //  val transformedJson: JsValue = Json.parse("""{"walking":true,"running":true}""")
-
-  val transformed = beforeJson.transform(transformer)
-
-  implicit val motionWrites: Writes[Motion] = (
-    (JsPath \ 'walking).write[Boolean] and
-      (JsPath \ 'running).write[Boolean] and
-      (JsPath \ 'driving).write[Boolean]
-    )(unlift(Motion.unapply))
-
-
-  implicit val transformedMotionReads: Reads[Motion] = (
-    (JsPath \ 'walking).read[Boolean] and
-      (JsPath \ 'running).read[Boolean] and
-      ((JsPath \ 'driving).read[Boolean] orElse (() => JsSuccess(false)))
-    )(Motion.apply _)
 }
