@@ -46,9 +46,6 @@ object Pulse {
       (JsPath \ 'battery).write[Battery] and
       (JsPath \ 'motion).write[Motion](MotionWrites)
     )(unlift(Pulse.unapply))
-
-
-
 }
 
 class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {

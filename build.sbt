@@ -8,6 +8,8 @@ libraryDependencies += "com.typesafe.play" %% "play-slick" % "0.6.0.1"
 
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.30"
 
+libraryDependencies += "org.mongodb" %% "casbah" % "2.7.1"
+
 playScalaSettings
 
 initialCommands in console := """
