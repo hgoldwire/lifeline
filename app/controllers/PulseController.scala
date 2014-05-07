@@ -26,14 +26,15 @@ object PulseController extends Controller {
 
   def savePulse = DBAction(BodyParsers.parse.json) {
     implicit request =>
-      request.body.validate[Pulse](pulseReads).fold(
-        errors => {
-          println(request.body)
-          BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(errors)))
-        },
-        pulse => {
-          Pulses.insert(pulse)
-          Ok(Json.toJson(pulse))
-        })
+      val json = request.body
+      val transformedMotion = json.transform(models.Motion.transformer)
+      val pulseResult = transformedMotion.flatMap(json => json.validate[Pulse](pulseReads))
+      pulseResult.fold(invalid => {
+        println(request.body)
+        BadRequest(Json.obj("status" -> "KO", "message" -> JsError.toFlatJson(invalid)))
+      }, valid => {
+        Pulses.insert(valid)
+        Ok(Json.toJson(valid))
+      })
   }
 }

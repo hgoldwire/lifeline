@@ -3,7 +3,7 @@
     "batteryState": "charging",
     "sudid": "F4D4D3F1-9999-9999-9999-B0A88B846623",
     "timestamp": 1397222000,
-    "motion": [],
+    "motion": [ "walking", "running" ],
     "longitude": -20.0,
     "horizontalAccuracy": 10,
     "latitude": 20.0,

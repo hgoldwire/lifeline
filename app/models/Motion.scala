@@ -13,7 +13,7 @@ import play.api.libs.functional.syntax._
 /**
  * Created by henry.goldwire on 5/5/14.
  */
-case class Motion(walking: Boolean = false, running: Boolean = false)
+case class Motion(walking: Boolean = false, running: Boolean = false, driving: Boolean = false)
 
 object Motion {
 
@@ -21,21 +21,23 @@ object Motion {
     Reads.of[List[String]].map(keys => Json.toJson(keys.map(_ -> value).toMap))
   }
 
-  val transformation =
-    (__ \ 'include).json.update(toBoolean(true)) andThen
-      (__ \ 'exclude).json.update(toBoolean(false))
+  val transformer = (__ \ 'motion).json.update(toBoolean(true))
 
-  val example = Json.parse( """{
-  "include": ["field1", "field2", "field3"],
-  "exclude": ["field4", "field5", "field6"]
-}""")
+  val beforeJson: JsValue = Json.parse( """{"motion": ["walking", "running"]}""")
+  //  val transformedJson: JsValue = Json.parse("""{"walking":true,"running":true}""")
 
-  val m: JsValue = Json.parse( """{"motion": ["walking", "running"]}""")
+  val transformed = beforeJson.transform(transformer)
 
-  val tb = (__ \ 'motion).json.update(toBoolean(true))
+  implicit val motionWrites: Writes[Motion] = (
+    (JsPath \ 'walking).write[Boolean] and
+      (JsPath \ 'running).write[Boolean] and
+      (JsPath \ 'driving).write[Boolean]
+    )(unlift(Motion.unapply))
 
 
-
-  val r = m.validate(tb)
-
+  implicit val transformedMotionReads: Reads[Motion] = (
+    (JsPath \ 'walking).read[Boolean] and
+      (JsPath \ 'running).read[Boolean] and
+      ((JsPath \ 'driving).read[Boolean] orElse (() => JsSuccess(false)))
+    )(Motion.apply _)
 }

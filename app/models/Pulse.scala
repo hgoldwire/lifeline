@@ -8,7 +8,7 @@ import play.api.db.slick.Config.driver.simple._
 /**
  * Created by henry.goldwire on 5/5/14.
  */
-case class Pulse(sudid: String, deviceName: String, location: Location, battery: Battery)
+case class Pulse(sudid: String, deviceName: String, location: Location, battery: Battery, motion: Motion)
 
 
 object Pulse {
@@ -32,14 +32,16 @@ object Pulse {
     (JsPath \ 'deviceName).read[String] and
       (JsPath \ 'sudid).read[String] and
       ((JsPath \ 'location).read[Location] orElse (unnestedLocationReads)) and
-      ((JsPath \ 'battery).read[Battery] orElse (unnestedBatteryReads))
+      ((JsPath \ 'battery).read[Battery] orElse (unnestedBatteryReads)) and
+      (JsPath \ 'motion).read[Motion]
     )(Pulse.apply _)
 
   implicit val pulseWrites: Writes[Pulse] = (
     (JsPath \ 'deviceName).write[String] and
       (JsPath \ 'sudid).write[String] and
       (JsPath \ 'location).write[Location] and
-      (JsPath \ 'battery).write[Battery]
+      (JsPath \ 'battery).write[Battery] and
+      (JsPath \ 'motion).write[Motion]
     )(unlift(Pulse.unapply))
 }
 
@@ -67,12 +69,14 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
   def motionRunning = column[Boolean]("motion_running")
 
-  def motion = (motionWalking, motionRunning) <>((Motion.apply _).tupled, Motion.unapply _)
+  def motionDriving = column[Boolean]("motion_driving")
+
+  def motion = (motionWalking, motionRunning, motionDriving) <>((Motion.apply _).tupled, Motion.unapply _)
 
   def battery = (batteryState, batteryLevel) <>((Battery.apply _).tupled, Battery.unapply _)
 
   def location = (latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) <>((Location.apply _).tupled, Location.unapply _)
 
-  def * = (sudid, deviceName, location, battery) <>((Pulse.apply _).tupled, Pulse.unapply _)
+  def * = (sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
 }
 
