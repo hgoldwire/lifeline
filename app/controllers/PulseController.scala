@@ -42,62 +42,25 @@ object PulseController extends Controller {
       val db = mongoClient("lifeline")
       val coll = db("pulse")
 
-      val chunkSize = 10000;
-      var chunks = scala.collection.mutable.ListBuffer[Pulse]();
-
-      def chunkedInsert(pulse: Pulse) {
-        chunks.append(pulse)
-        if (chunks.size % 100 == 0) {
-          print("chunks: " + chunks.size)
-        }
-        if (chunks.size >= chunkSize) {
-          Pulses.insertAll(chunks: _*)
-          chunks = scala.collection.mutable.ListBuffer[Pulse]()
-        }
-      }
-
       val allDocs = coll.find()
       for (doc <- allDocs) {
         val jsonDoc = doc.toString
         try {
           val parsed = Json.parse(jsonDoc)
-          parsed.validate[Pulse].fold(error => {
-            println("can't insert " + jsonDoc)
-            println(error)
-            println("------------------------------------------------------------")
-          }, pulse => {
-            chunkedInsert(pulse)
-          })
+          val deviceName = (parsed \ "deviceName").validate[String].getOrElse("Mother")
+          if (!List("Mother", "Child", "Grandpa").contains(deviceName)) {
+            parsed.validate[Pulse].fold(error => {
+            }, pulse => {
+
+              Pulses.insert(pulse)
+            })
+          } else {
+
+          }
         } catch {
-          case e: Exception => println("super gnarly exception: " + e + " for " + e )
+          case e: Exception => //println("super gnarly exception: " + e + " for " + jsonDoc)
         }
       }
       Ok("hi")
   }
 }
-
-//object ImportMongo {
-//
-//  val Pulses = TableQuery[PulsesTable] //see a way to architect your app in the computers-database-slick sample
-//
-//  def apply = {
-//    import com.mongodb.casbah.Imports._
-//    val mongoClient = MongoClient("localhost", 27017)
-//    val db = mongoClient("lifeline")
-//    val coll = db("pulse")
-//
-//    val allDocs = coll.find()
-//    DB.withSession( implicit session =>
-//      for (doc <- allDocs) {
-//        val jsonDoc = doc.toString
-//        Json.parse(jsonDoc).validate[Pulse].fold(error => {
-//          println("can't insert " + jsonDoc)
-//          println(error)
-//          println("------------------------------------------------------------")
-//        }, pulse => {
-//          Pulses.insert(pulse)
-//        })
-//      }
-//    )
-//  }
-//}

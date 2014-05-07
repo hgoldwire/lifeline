@@ -17,13 +17,17 @@ case class Pulse(sudid: String, deviceName: String, location: Location, battery:
 object Pulse {
 
   // helper for when location data isn't nested in location field
-  val unnestedLocationReads: Reads[Location] = (
-    (JsPath \ 'latitude).read[Double] and
-      (JsPath \ 'longitude).read[Double] and
-      (JsPath \ 'altitude).read[Int] and
-      (JsPath \ 'horizontalAccuracy).read[Int] and
-      (JsPath \ 'verticalAccuracy).read[Int]
-    )(Location.apply _)
+  object unnestedLocationReads extends Reads[Location] {
+    def reads(json: JsValue) = {
+      val latitude = (json \ "latitude").validate[Double].getOrElse(0: Double)
+      val longitude = (json \ "longitude").validate[Double].getOrElse(0: Double)
+      val altitude = (json \ "altitude").validate[Int].getOrElse(0)
+      val horizontalAccuracy = (json \ "horizontalAccuracy").validate[Int].getOrElse(0)
+      val verticalAccuracy = (json \ "verticalAccuracy").validate[Int].getOrElse(0)
+      val location = Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)
+      JsSuccess(location)
+    }
+  }
 
   // helper for when battery data isn't nested in battery field
   val unnestedBatteryReads: Reads[Battery] = (

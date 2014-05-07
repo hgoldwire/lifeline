@@ -1,16 +1,8 @@
 package models
 
 import play.api.libs.json._
-
-// JSON library
-
 import play.api.libs.json.Reads._
-
-// Custom validation helpers
-
 import play.api.libs.functional.syntax._
-
-// Combinator syntax
 
 
 /**
@@ -19,6 +11,10 @@ import play.api.libs.functional.syntax._
 case class Location(latitude: Double, longitude: Double, altitude: Int, horizontalAccuracy: Int, verticalAccuracy: Int)
 
 object Location {
+
+  object ReadsZero extends Reads[Int] {
+    def reads(json: JsValue) = json.validate[Int]
+  }
 
   implicit val locationWrites: Writes[Location] = (
     (JsPath \ "latitude").write[Double] and
@@ -36,3 +32,6 @@ object Location {
       (JsPath \ "verticalAccuracy").read[Int]
     )(Location.apply _)
 }
+
+
+

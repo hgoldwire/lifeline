@@ -1,10 +1,6 @@
 package models
 
 import play.api.libs.json._
-import play.api.data.validation.ValidationError
-import play.api.data.validation.ValidationError
-import play.api.data.validation.ValidationError
-import play.api.data.validation.ValidationError
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsBoolean
 import play.api.data.validation.ValidationError
