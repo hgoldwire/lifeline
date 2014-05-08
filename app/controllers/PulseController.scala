@@ -18,9 +18,22 @@ object PulseController extends Controller {
 
   val Pulses = TableQuery[PulsesTable] //see a way to architect your app in the computers-database-slick sample
 
-  def listPulses = DBAction {
+  def getAll = DBAction {
     implicit rs =>
-      Ok(toJson(Pulses.list))
+      Ok(toJson(Pulses.list()))
+  }
+
+  def get(deviceName: Option[String], interval: Option[Int]) = DBAction {
+    implicit rs =>
+      val pulses = deviceName match {
+        case Some(name) => for {
+          p <- Pulses if p.deviceName === deviceName
+        } yield (p)
+        case None => Pulses
+      }
+
+           
+      Ok(toJson(pulses.list()))
   }
 
   def savePulse = DBAction(BodyParsers.parse.json) {

@@ -96,9 +96,18 @@ object Pulse {
   *   batteryLevel: average of values
   */
   def mergePulses(pulses: Seq[Pulse]) = {
-    def avg[T: Numeric](s: Seq[T]) = {
+    def avgLong(s: Seq[Long]) = {
       s.sum / s.length
     }
+
+    def avgInt(s: Seq[Int]) = {
+      s.sum / s.length
+    }
+
+    def avg(s: Seq[Double]) = {
+      s.sum / s.length
+    }
+
     def mergeMotion(motions: Seq[Motion]): Motion = {
       val speed = motions.map(_.speed).max
       val running = motions.exists(m => m.running)
@@ -109,15 +118,25 @@ object Pulse {
     def mergeLocation(locations: Seq[Location]) = {
       val latitude = avg(locations.map(_.latitude))
       val longitude = avg(locations.map(_.longitude))
-      val altitude = avg(locations.map(_.altitude))
+      val altitude = avgInt(locations.map(_.altitude))
+      val horizontalAccuracy = avgInt(locations.map(_.horizontalAccuracy))
+      val verticalAccuracy = avgInt(locations.map(_.verticalAccuracy))
+      Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)
     }
     def mergeBattery(batteries: Seq[Battery]) = {
       val orderedStates = Seq("unplugged", "charging", "full", "unknown")
-      val batteryLevel: Int = batteries.map(_.level).sum/batteries.length
+      val batteryLevel: Int = batteries.map(_.level).sum / batteries.length
       val batteryState: String = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse("unknown")
       Battery(batteryState, batteryLevel)
     }
 
+    val datetime = new DateTime(avgLong(pulses.map(_.datetime.getMillis)))
+    val sudid = pulses.head.sudid
+    val deviceName = pulses.head.deviceName
+    val location = mergeLocation(pulses.map(_.location))
+    val battery = mergeBattery(pulses.map(_.battery))
+    val motion = mergeMotion(pulses.map(_.motion))
+    Pulse(datetime, sudid, deviceName, location, battery, motion)
   }
 }
 
