@@ -8,6 +8,7 @@ import play.api.mvc._
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.json.Json._
+import org.joda.time.DateTime
 
 
 /**
@@ -48,10 +49,12 @@ object PulseController extends Controller {
         try {
           val parsed = Json.parse(jsonDoc)
           val deviceName = (parsed \ "deviceName").validate[String].getOrElse("Mother")
+          val timestamp = (parsed \ "timestamp").validate[Int].get
+          val joda = new DateTime(timestamp * 1000L)
+//          println(deviceName + " / " + timestamp+ " / " + joda)
           if (!List("Mother", "Child", "Grandpa").contains(deviceName)) {
             parsed.validate[Pulse].fold(error => {
             }, pulse => {
-
               Pulses.insert(pulse)
             })
           } else {

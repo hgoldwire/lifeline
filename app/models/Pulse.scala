@@ -4,17 +4,28 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.db.slick.Config.driver.simple._
-import play.api.data.validation.ValidationError
-import play.api.libs.json
+
+//import scala.slick.driver.MySQLDriver.simple._
+
 import models.Motion.{MotionWrites, MotionReads}
+import org.joda.time.DateTime
+import com.github.tototoshi.slick.MySQLJodaSupport._
+
 
 /**
  * Created by henry.goldwire on 5/5/14.
  */
-case class Pulse(sudid: String, deviceName: String, location: Location, battery: Battery, motion: Motion)
-
+case class Pulse(datetime: DateTime, sudid: String, deviceName: String, location: Location, battery: Battery, motion: Motion)
 
 object Pulse {
+
+  // helper to get unix timestamps into joda DateTime format (i.e. * 1000ms)
+  object timestamp2DateTime extends Reads[DateTime] {
+    def reads(json: JsValue) = {
+      val timestamp = json.validate[Int].getOrElse(0)
+      JsSuccess(new DateTime(timestamp * 1000L))
+    }
+  }
 
   // helper for when location data isn't nested in location field
   object unnestedLocationReads extends Reads[Location] {
@@ -36,16 +47,18 @@ object Pulse {
     )(Battery.apply _)
 
   implicit val pulseReads: Reads[Pulse] = (
-    (JsPath \ 'deviceName).read[String] and
+    (JsPath \ 'timestamp).read[DateTime](timestamp2DateTime) and
       (JsPath \ 'sudid).read[String] and
+      (JsPath \ 'deviceName).read[String] and
       ((JsPath \ 'location).read[Location] orElse (unnestedLocationReads)) and
       ((JsPath \ 'battery).read[Battery] orElse (unnestedBatteryReads)) and
       (JsPath \ 'motion).read[Motion](MotionReads)
     )(Pulse.apply _)
 
   implicit val pulseWrites: Writes[Pulse] = (
-    (JsPath \ 'deviceName).write[String] and
+    (JsPath \ 'timestamp).write[DateTime] and
       (JsPath \ 'sudid).write[String] and
+      (JsPath \ 'deviceName).write[String] and
       (JsPath \ 'location).write[Location] and
       (JsPath \ 'battery).write[Battery] and
       (JsPath \ 'motion).write[Motion](MotionWrites)
@@ -53,6 +66,8 @@ object Pulse {
 }
 
 class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
+
+  def datetime = column[DateTime]("datetime")
 
   def sudid = column[String]("guid")
 
@@ -84,6 +99,6 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
   def location = (latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) <>((Location.apply _).tupled, Location.unapply _)
 
-  def * = (sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
+  def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
 }
 

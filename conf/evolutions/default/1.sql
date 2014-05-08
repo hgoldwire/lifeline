@@ -3,7 +3,7 @@
 
 # --- !Ups
 
-create table `PULSE` (`guid` VARCHAR(254) NOT NULL,`device_name` VARCHAR(254) NOT NULL,`latitude` DOUBLE NOT NULL,`longitude` DOUBLE NOT NULL,`altitude` INTEGER NOT NULL,`horizontal_accuracy` INTEGER NOT NULL,`vertical_accuracy` INTEGER NOT NULL,`battery_state` VARCHAR(254) NOT NULL,`battery_level` INTEGER NOT NULL,`motion_walking` BOOLEAN NOT NULL,`motion_running` BOOLEAN NOT NULL,`motion_driving` BOOLEAN NOT NULL);
+create table `PULSE` (`datetime` TIMESTAMP NOT NULL,`guid` VARCHAR(254) NOT NULL,`device_name` VARCHAR(254) NOT NULL,`latitude` DOUBLE NOT NULL,`longitude` DOUBLE NOT NULL,`altitude` INTEGER NOT NULL,`horizontal_accuracy` INTEGER NOT NULL,`vertical_accuracy` INTEGER NOT NULL,`battery_state` VARCHAR(254) NOT NULL,`battery_level` INTEGER NOT NULL,`motion_walking` BOOLEAN NOT NULL,`motion_running` BOOLEAN NOT NULL,`motion_driving` BOOLEAN NOT NULL);
 
 # --- !Downs
 
