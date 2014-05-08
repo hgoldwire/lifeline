@@ -8,7 +8,6 @@ import play.api.mvc._
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.json.Json._
-import org.joda.time.DateTime
 
 
 /**
@@ -18,22 +17,22 @@ object PulseController extends Controller {
 
   val Pulses = TableQuery[PulsesTable] //see a way to architect your app in the computers-database-slick sample
 
-  def getAll = DBAction {
-    implicit rs =>
-      Ok(toJson(Pulses.list()))
-  }
-
   def get(deviceName: Option[String], interval: Option[Int]) = DBAction {
     implicit rs =>
-      val pulses = deviceName match {
-        case Some(name) => for {
-          p <- Pulses if p.deviceName === deviceName
-        } yield (p)
-        case None => Pulses
-      }
 
-           
-      Ok(toJson(pulses.list()))
+//      val pulses = deviceName match {
+//        case Some(name) => for {
+//          p <- Pulses if p.deviceName === deviceName
+//        } yield (p)
+//        case None => Pulses
+//      }
+
+//      val bucketized = interval match {
+//        case Some(i) => IntervalBucketizer.bucketize(i, pulses.list())
+//        case None => pulses.list
+//      }
+//      Ok(toJson(bucketized))
+      Ok("Hi")
   }
 
   def savePulse = DBAction(BodyParsers.parse.json) {

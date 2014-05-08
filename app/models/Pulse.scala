@@ -76,8 +76,50 @@ object Pulse {
       (JsPath \ 'battery).write[Battery] and
       (JsPath \ 'motion).write[Motion](motionWrites)
     )(unlift(Pulse.unapply))
+}
 
-  /*
+class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
+
+  def datetime = column[DateTime]("datetime")
+
+  def sudid = column[String]("guid")
+
+  def deviceName = column[String]("device_name")
+
+  def latitude = column[Double]("latitude")
+
+  def longitude = column[Double]("longitude")
+
+  def altitude = column[Int]("altitude")
+
+  def horizontalAccuracy = column[Int]("horizontal_accuracy")
+
+  def verticalAccuracy = column[Int]("vertical_accuracy")
+
+  def batteryState = column[String]("battery_state")
+
+  def batteryLevel = column[Int]("battery_level")
+
+  def motionSpeed = column[Int]("motion_speed")
+
+  def motionWalking = column[Boolean]("motion_walking")
+
+  def motionRunning = column[Boolean]("motion_running")
+
+  def motionDriving = column[Boolean]("motion_driving")
+
+  def motion = (motionSpeed, motionWalking, motionRunning, motionDriving) <>((Motion.apply _).tupled, Motion.unapply _)
+
+  def battery = (batteryState, batteryLevel) <>((Battery.apply _).tupled, Battery.unapply _)
+
+  def location = (latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) <>((Location.apply _).tupled, Location.unapply _)
+
+  def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
+}
+
+trait PulseBucketizer {
+
+ /*
   * merges multiple pulses according to these rules:
   *   sudid: no change
   *   deviceName: no change
@@ -140,42 +182,30 @@ object Pulse {
   }
 }
 
-class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
+object IntervalBucketizer extends PulseBucketizer {
 
-  def datetime = column[DateTime]("datetime")
+  /*
+  * Massage a list of Pulses into no more than 1 sample per bucketInterval.
+  * If multiple pulses exist within the interval, values are chosen using mergePulses.
+  */
+  def bucketize(bucketInterval: Int, pulses: Traversable[Pulse]): Traversable[Pulse] = {
 
-  def sudid = column[String]("guid")
+    def bucketNumber(pulse: Pulse): Long = {
+      pulse.datetime.getMillis / bucketInterval
+    }
 
-  def deviceName = column[String]("device_name")
+    val merged = for {
+      head <- pulses
+      thisbucket = bucketNumber(head)
+      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
+    } yield (mergePulses(Seq(head) ++ rest))
 
-  def latitude = column[Double]("latitude")
-
-  def longitude = column[Double]("longitude")
-
-  def altitude = column[Int]("altitude")
-
-  def horizontalAccuracy = column[Int]("horizontal_accuracy")
-
-  def verticalAccuracy = column[Int]("vertical_accuracy")
-
-  def batteryState = column[String]("battery_state")
-
-  def batteryLevel = column[Int]("battery_level")
-
-  def motionSpeed = column[Int]("motion_speed")
-
-  def motionWalking = column[Boolean]("motion_walking")
-
-  def motionRunning = column[Boolean]("motion_running")
-
-  def motionDriving = column[Boolean]("motion_driving")
-
-  def motion = (motionSpeed, motionWalking, motionRunning, motionDriving) <>((Motion.apply _).tupled, Motion.unapply _)
-
-  def battery = (batteryState, batteryLevel) <>((Battery.apply _).tupled, Battery.unapply _)
-
-  def location = (latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) <>((Location.apply _).tupled, Location.unapply _)
-
-  def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
+    merged
+  }
+  //    if (pulses.hasNext) {
+  //      val head = pulses.next
+  //      val thisBucket = bucketNumber(head)
+  //      val tail = pulses.takeWhile(p => bucketNumber(p) == thisBucket)
+  //      mergePulses(Seq(head) ++ tail)
+  //    }
 }
-
