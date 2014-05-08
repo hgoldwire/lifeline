@@ -77,26 +77,47 @@ object Pulse {
       (JsPath \ 'motion).write[Motion](motionWrites)
     )(unlift(Pulse.unapply))
 
- /*
- * merges multiple pulses according to these rules:
- *   speed: highest value
- *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
- *   sudid: no change
- *   timestamp: average of values
- *   motion: include all unique values
- *   longitude: average of values
- *   horizontalAccuracy: average of values
- *   latitude: average of values
- *   verticalAccuracy: average of values
- *   batteryLevel: average of values
- *   altitude: average of values
- *   deviceName: no change
- *   createdAt: REMOVED
- *   updatedAt: REMOVED
- *   id: REMOVED
- */
+  /*
+  * merges multiple pulses according to these rules:
+  *   sudid: no change
+  *   deviceName: no change
+  *   timestamp: average of values
+  *
+  *   speed: highest value
+  *   motion: include all unique values
+  *
+  *   latitude: average of values
+  *   longitude: average of values
+  *   altitude: average of values
+  *   horizontalAccuracy: average of values
+  *   verticalAccuracy: average of values
+  *
+  *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
+  *   batteryLevel: average of values
+  */
   def mergePulses(pulses: Seq[Pulse]) = {
-//    var speed  pulses.map(_.speed).max
+    def avg[T: Numeric](s: Seq[T]) = {
+      s.sum / s.length
+    }
+    def mergeMotion(motions: Seq[Motion]): Motion = {
+      val speed = motions.map(_.speed).max
+      val running = motions.exists(m => m.running)
+      val walking = motions.exists(m => m.driving)
+      val driving = motions.exists(m => m.walking)
+      Motion(speed, walking, running, driving)
+    }
+    def mergeLocation(locations: Seq[Location]) = {
+      val latitude = avg(locations.map(_.latitude))
+      val longitude = avg(locations.map(_.longitude))
+      val altitude = avg(locations.map(_.altitude))
+    }
+    def mergeBattery(batteries: Seq[Battery]) = {
+      val orderedStates = Seq("unplugged", "charging", "full", "unknown")
+      val batteryLevel: Int = batteries.map(_.level).sum/batteries.length
+      val batteryState: String = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse("unknown")
+      Battery(batteryState, batteryLevel)
+    }
+
   }
 }
 
