@@ -4,10 +4,8 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.db.slick.Config.driver.simple._
-
-//import scala.slick.driver.MySQLDriver.simple._
-
-import models.Motion.{MotionWrites, MotionReads}
+import play.api.data.validation.ValidationError
+import models.Motion._
 import org.joda.time.DateTime
 import com.github.tototoshi.slick.MySQLJodaSupport._
 
@@ -40,6 +38,21 @@ object Pulse {
     }
   }
 
+  // helper for when speed and motion are separate fields
+  implicit object unnestedMotionReads extends Reads[Motion] {
+    def reads(json: JsValue) = {
+      def speed = (json \ "speed").validate[Int].getOrElse(-1)
+      (json \ "motion").validate[Seq[String]].fold(errors => {
+        JsError(Seq(JsPath() -> Seq(ValidationError("error.expected.jsarray"))))
+      }, motions => {
+        val isWalking = motions.contains("walking")
+        val isRunning = motions.contains("running")
+        val isDriving = motions.contains("driving")
+        JsSuccess(Motion(speed, isWalking, isRunning, isDriving))
+      })
+    }
+  }
+
   // helper for when battery data isn't nested in battery field
   val unnestedBatteryReads: Reads[Battery] = (
     (JsPath \ 'batteryState).read[String] and
@@ -52,7 +65,7 @@ object Pulse {
       (JsPath \ 'deviceName).read[String] and
       ((JsPath \ 'location).read[Location] orElse (unnestedLocationReads)) and
       ((JsPath \ 'battery).read[Battery] orElse (unnestedBatteryReads)) and
-      (JsPath \ 'motion).read[Motion](MotionReads)
+      (JsPath \ 'motion).read[Motion](motionReads).orElse(JsPath.read[Motion](unnestedMotionReads))
     )(Pulse.apply _)
 
   implicit val pulseWrites: Writes[Pulse] = (
@@ -61,8 +74,30 @@ object Pulse {
       (JsPath \ 'deviceName).write[String] and
       (JsPath \ 'location).write[Location] and
       (JsPath \ 'battery).write[Battery] and
-      (JsPath \ 'motion).write[Motion](MotionWrites)
+      (JsPath \ 'motion).write[Motion](motionWrites)
     )(unlift(Pulse.unapply))
+
+ /*
+ * merges multiple pulses according to these rules:
+ *   speed: highest value
+ *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
+ *   sudid: no change
+ *   timestamp: average of values
+ *   motion: include all unique values
+ *   longitude: average of values
+ *   horizontalAccuracy: average of values
+ *   latitude: average of values
+ *   verticalAccuracy: average of values
+ *   batteryLevel: average of values
+ *   altitude: average of values
+ *   deviceName: no change
+ *   createdAt: REMOVED
+ *   updatedAt: REMOVED
+ *   id: REMOVED
+ */
+  def mergePulses(pulses: Seq[Pulse]) = {
+//    var speed  pulses.map(_.speed).max
+  }
 }
 
 class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
@@ -87,13 +122,15 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
   def batteryLevel = column[Int]("battery_level")
 
+  def motionSpeed = column[Int]("motion_speed")
+
   def motionWalking = column[Boolean]("motion_walking")
 
   def motionRunning = column[Boolean]("motion_running")
 
   def motionDriving = column[Boolean]("motion_driving")
 
-  def motion = (motionWalking, motionRunning, motionDriving) <>((Motion.apply _).tupled, Motion.unapply _)
+  def motion = (motionSpeed, motionWalking, motionRunning, motionDriving) <>((Motion.apply _).tupled, Motion.unapply _)
 
   def battery = (batteryState, batteryLevel) <>((Battery.apply _).tupled, Battery.unapply _)
 

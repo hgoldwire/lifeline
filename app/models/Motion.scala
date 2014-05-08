@@ -3,32 +3,35 @@ package models
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsBoolean
-import play.api.data.validation.ValidationError
-import play.api.libs.json.JsSuccess
+import play.api.libs.functional.syntax._
 
 
 /**
  * Created by henry.goldwire on 5/5/14.
  */
-case class Motion(walking: Boolean = false, running: Boolean = false, driving: Boolean = false)
+case class Motion(speed: Int, walking: Boolean = false, running: Boolean = false, driving: Boolean = false)
 
 object Motion {
 
-  implicit object MotionReads extends Reads[Motion] {
-    def reads(json: JsValue) = json.validate[Seq[String]].fold(errors => {
-      JsError(Seq(JsPath() -> Seq(ValidationError("error.expected.jsarray"))))
-    }, motions => {
-      val isWalking = motions.contains("walking")
-      val isRunning = motions.contains("running")
-      val isDriving = motions.contains("driving")
-      JsSuccess(Motion(isWalking, isRunning, isDriving))
-    })
-  }
+  implicit val motionReads: Reads[Motion] = (
+    (JsPath \ "speed").read[Int] and
+      (JsPath \ "isWalking").read[Boolean] and
+      (JsPath \ "isDriving").read[Boolean] and
+      (JsPath \ "isRunning").read[Boolean]
+    )(Motion.apply _)
 
-  implicit object MotionWrites extends Writes[Motion] {
-    def writes(motion: Motion) = {
-      JsObject(Seq(("walking", JsBoolean(motion.walking)), ("driving", JsBoolean(motion.driving)), ("running", JsBoolean(motion.running))))
-    }
-  }
+  implicit val motionWrites: Writes[Motion] = (
+    (JsPath \ "speed").write[Int] and
+      (JsPath \ "isWalking").write[Boolean] and
+      (JsPath \ "isDriving").write[Boolean] and
+      (JsPath \ "isRunning").write[Boolean]
+    )(unlift(Motion.unapply))
+
+//  implicit object MotionWrites extends Writes[Motion] {
+//    def writes(motion: Motion) = {
+//      val speed = JsObject(Seq(("speed", JsNumber(motion.speed))))
+//      val movement = JsObject(Seq(("walking", JsBoolean(motion.walking)), ("driving", JsBoolean(motion.driving)), ("running", JsBoolean(motion.running))))
+//    }
+//  }
 
 }

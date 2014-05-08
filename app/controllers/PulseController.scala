@@ -48,18 +48,10 @@ object PulseController extends Controller {
         val jsonDoc = doc.toString
         try {
           val parsed = Json.parse(jsonDoc)
-          val deviceName = (parsed \ "deviceName").validate[String].getOrElse("Mother")
-          val timestamp = (parsed \ "timestamp").validate[Int].get
-          val joda = new DateTime(timestamp * 1000L)
-//          println(deviceName + " / " + timestamp+ " / " + joda)
-          if (!List("Mother", "Child", "Grandpa").contains(deviceName)) {
-            parsed.validate[Pulse].fold(error => {
-            }, pulse => {
-              Pulses.insert(pulse)
-            })
-          } else {
-
-          }
+          parsed.validate[Pulse].fold(error => {
+          }, pulse => {
+            Pulses.insert(pulse)
+          })
         } catch {
           case e: Exception => //println("super gnarly exception: " + e + " for " + jsonDoc)
         }
