@@ -117,9 +117,36 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
   def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
 }
 
-trait PulseBucketizer {
 
- /*
+object IntervalBucketizer {
+
+  /*
+  * Massage a list of Pulses into no more than 1 sample per bucketInterval.
+  * If multiple pulses exist within the interval, values are chosen using mergePulses.
+  */
+  def bucketize(bucketInterval: Int, pulses: Traversable[Pulse]): Traversable[Pulse] = {
+
+    def bucketNumber(pulse: Pulse): Long = {
+      pulse.datetime.getMillis / bucketInterval
+    }
+
+    val merged = for {
+      head <- pulses
+      thisbucket = bucketNumber(head)
+      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
+    } yield (mergePulses(Seq(head) ++ rest))
+
+    merged
+  }
+
+  //    if (pulses.hasNext) {
+  //      val head = pulses.next
+  //      val thisBucket = bucketNumber(head)
+  //      val tail = pulses.takeWhile(p => bucketNumber(p) == thisBucket)
+  //      mergePulses(Seq(head) ++ tail)
+  //    }
+
+  /*
   * merges multiple pulses according to these rules:
   *   sudid: no change
   *   deviceName: no change
@@ -180,32 +207,4 @@ trait PulseBucketizer {
     val motion = mergeMotion(pulses.map(_.motion))
     Pulse(datetime, sudid, deviceName, location, battery, motion)
   }
-}
-
-object IntervalBucketizer extends PulseBucketizer {
-
-  /*
-  * Massage a list of Pulses into no more than 1 sample per bucketInterval.
-  * If multiple pulses exist within the interval, values are chosen using mergePulses.
-  */
-  def bucketize(bucketInterval: Int, pulses: Traversable[Pulse]): Traversable[Pulse] = {
-
-    def bucketNumber(pulse: Pulse): Long = {
-      pulse.datetime.getMillis / bucketInterval
-    }
-
-    val merged = for {
-      head <- pulses
-      thisbucket = bucketNumber(head)
-      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
-    } yield (mergePulses(Seq(head) ++ rest))
-
-    merged
-  }
-  //    if (pulses.hasNext) {
-  //      val head = pulses.next
-  //      val thisBucket = bucketNumber(head)
-  //      val tail = pulses.takeWhile(p => bucketNumber(p) == thisBucket)
-  //      mergePulses(Seq(head) ++ tail)
-  //    }
 }
