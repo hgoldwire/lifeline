@@ -32,12 +32,14 @@ object PulseController extends Controller {
         case None => Pulses
       }
 
-      //      val bucketized = interval match {
-      //        case Some(i) => IntervalBucketizer.bucketize(i, pulses.list())
-      //        case None => pulses.list
-      //      }
-      //      Ok(toJson(bucketized))
-      Ok(toJson(pulses.list))
+      val bucketized = interval match {
+        case Some(i) => IntervalBucketizer.bucketize(i, pulses.list())
+        case None => pulses.list
+      }
+
+
+      Ok(toJson(bucketized))
+//      Ok(toJson(pulses.list))
   }
 
   def savePulse = DBAction(BodyParsers.parse.json) {

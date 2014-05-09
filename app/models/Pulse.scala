@@ -130,81 +130,93 @@ object IntervalBucketizer {
       pulse.datetime.getMillis / bucketInterval
     }
 
-    val merged = for {
-      head <- pulses
-      thisbucket = bucketNumber(head)
-      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
-    } yield (mergePulses(Seq(head) ++ rest))
 
+    val pi = pulses.toIterator
+    val merged = scala.collection.mutable.ArrayBuffer[Pulse]()
+    while (pi.hasNext) {
+      val head = pi.next
+      val thisBucket = bucketNumber(head)
+      val tail = pi.takeWhile(p => bucketNumber(p) == thisBucket)
+      merged += mergePulses(Seq(head) ++ tail)
+    }
+
+
+    //    val merged = for {
+    //      head <- pulses
+    //      thisbucket = bucketNumber(head)
+    //      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
+    //      long = Seq(head) ++ rest
+    //      merged = mergePulses(long)
+    //      nada = println(head.datetime.getMillis + " " + thisbucket + " rest: " + rest.toList.length +" long: " + long.toList.length)
+    //    } yield merged
+    //
+    //    merged
+    //  }
+
+    //
+    /*
+    * merges multiple pulses according to these rules:
+    *   sudid: no change
+    *   deviceName: no change
+    *   timestamp: average of values
+    *
+    *   speed: highest value
+    *   motion: include all unique values
+    *
+    *   latitude: average of values
+    *   longitude: average of values
+    *   altitude: average of values
+    *   horizontalAccuracy: average of values
+    *   verticalAccuracy: average of values
+    *
+    *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
+    *   batteryLevel: average of values
+    */
+    def mergePulses(pulses: Seq[Pulse]) = {
+      def avgLong(s: Seq[Long]) = {
+        s.sum / s.length
+      }
+
+      def avgInt(s: Seq[Int]) = {
+        s.sum / s.length
+      }
+
+      def avg(s: Seq[Double]) = {
+        s.sum / s.length
+      }
+
+      def mergeMotion(motions: Seq[Motion]): Motion = {
+        val speed = motions.map(_.speed).max
+        val running = motions.exists(m => m.running)
+        val walking = motions.exists(m => m.driving)
+        val driving = motions.exists(m => m.walking)
+        Motion(speed, walking, running, driving)
+      }
+      def mergeLocation(locations: Seq[Location]) = {
+        val latitude = avg(locations.map(_.latitude))
+        val longitude = avg(locations.map(_.longitude))
+        val altitude = avgInt(locations.map(_.altitude))
+        val horizontalAccuracy = avgInt(locations.map(_.horizontalAccuracy))
+        val verticalAccuracy = avgInt(locations.map(_.verticalAccuracy))
+        Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)
+      }
+      def mergeBattery(batteries: Seq[Battery]) = {
+        val orderedStates = Seq("unplugged", "charging", "full", "unknown")
+        val batteryLevel: Int = batteries.map(_.level).sum / batteries.length
+        val batteryState: String = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse("unknown")
+        Battery(batteryState, batteryLevel)
+      }
+
+      println("merging " + pulses.length + " pulses")
+      val datetime = new DateTime(avgLong(pulses.map(_.datetime.getMillis)))
+      val sudid = pulses.head.sudid
+      val deviceName = pulses.head.deviceName
+      val location = mergeLocation(pulses.map(_.location))
+      val battery = mergeBattery(pulses.map(_.battery))
+      val motion = mergeMotion(pulses.map(_.motion))
+      Pulse(datetime, sudid, deviceName, location, battery, motion)
+    }
     merged
-  }
 
-  //    if (pulses.hasNext) {
-  //      val head = pulses.next
-  //      val thisBucket = bucketNumber(head)
-  //      val tail = pulses.takeWhile(p => bucketNumber(p) == thisBucket)
-  //      mergePulses(Seq(head) ++ tail)
-  //    }
-
-  /*
-  * merges multiple pulses according to these rules:
-  *   sudid: no change
-  *   deviceName: no change
-  *   timestamp: average of values
-  *
-  *   speed: highest value
-  *   motion: include all unique values
-  *
-  *   latitude: average of values
-  *   longitude: average of values
-  *   altitude: average of values
-  *   horizontalAccuracy: average of values
-  *   verticalAccuracy: average of values
-  *
-  *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
-  *   batteryLevel: average of values
-  */
-  def mergePulses(pulses: Seq[Pulse]) = {
-    def avgLong(s: Seq[Long]) = {
-      s.sum / s.length
-    }
-
-    def avgInt(s: Seq[Int]) = {
-      s.sum / s.length
-    }
-
-    def avg(s: Seq[Double]) = {
-      s.sum / s.length
-    }
-
-    def mergeMotion(motions: Seq[Motion]): Motion = {
-      val speed = motions.map(_.speed).max
-      val running = motions.exists(m => m.running)
-      val walking = motions.exists(m => m.driving)
-      val driving = motions.exists(m => m.walking)
-      Motion(speed, walking, running, driving)
-    }
-    def mergeLocation(locations: Seq[Location]) = {
-      val latitude = avg(locations.map(_.latitude))
-      val longitude = avg(locations.map(_.longitude))
-      val altitude = avgInt(locations.map(_.altitude))
-      val horizontalAccuracy = avgInt(locations.map(_.horizontalAccuracy))
-      val verticalAccuracy = avgInt(locations.map(_.verticalAccuracy))
-      Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)
-    }
-    def mergeBattery(batteries: Seq[Battery]) = {
-      val orderedStates = Seq("unplugged", "charging", "full", "unknown")
-      val batteryLevel: Int = batteries.map(_.level).sum / batteries.length
-      val batteryState: String = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse("unknown")
-      Battery(batteryState, batteryLevel)
-    }
-
-    val datetime = new DateTime(avgLong(pulses.map(_.datetime.getMillis)))
-    val sudid = pulses.head.sudid
-    val deviceName = pulses.head.deviceName
-    val location = mergeLocation(pulses.map(_.location))
-    val battery = mergeBattery(pulses.map(_.battery))
-    val motion = mergeMotion(pulses.map(_.motion))
-    Pulse(datetime, sudid, deviceName, location, battery, motion)
   }
 }
