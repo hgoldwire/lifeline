@@ -6,6 +6,7 @@ import play.api.libs.functional.syntax._
 import play.api.db.slick.Config.driver.simple._
 import play.api.data.validation.ValidationError
 import models.Motion._
+import models.Battery._
 import org.joda.time.DateTime
 import com.github.tototoshi.slick.MySQLJodaSupport._
 
@@ -21,6 +22,15 @@ object Pulse {
   object timestamp2DateTime extends Reads[DateTime] {
     def reads(json: JsValue) = {
       val timestamp = json.validate[Int].getOrElse(0)
+      JsSuccess(new DateTime(timestamp * 1000L))
+    }
+  }
+
+  // helper to get unix timestamps into joda DateTime format (i.e. * 1000ms)
+  object dateTime2timestamp extends Writes[DateTime] {
+    def writes(dt: DateTime) = {
+      val timestamp = dt.getMillis
+      JsNumber(timestamp)
       JsSuccess(new DateTime(timestamp * 1000L))
     }
   }
@@ -55,8 +65,8 @@ object Pulse {
 
   // helper for when battery data isn't nested in battery field
   val unnestedBatteryReads: Reads[Battery] = (
-    (JsPath \ 'batteryState).read[String] and
-      ((JsPath \ 'batteryLevel).read[Int] orElse (__ \ 'batteryLevel).read[String].map(_.toInt))
+    (JsPath \ 'batteryState).read[BatteryState] and
+      ((JsPath \ 'batteryLevel).read[BatteryLevel] orElse (__ \ 'batteryLevel).read[String].map(bl => BatteryLevel(bl.toInt)))
     )(Battery.apply _)
 
   implicit val pulseReads: Reads[Pulse] = (
@@ -96,9 +106,9 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
   def verticalAccuracy = column[Int]("vertical_accuracy")
 
-  def batteryState = column[String]("battery_state")
+  def batteryState = column[BatteryState]("battery_state")
 
-  def batteryLevel = column[Int]("battery_level")
+  def batteryLevel = column[BatteryLevel]("battery_level")
 
   def motionSpeed = column[Int]("motion_speed")
 
@@ -115,6 +125,17 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
   def location = (latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) <>((Location.apply _).tupled, Location.unapply _)
 
   def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
+
+
+  implicit val batteryStateTypeMapper = MappedColumnType.base[BatteryState, String]((_ match {
+    case Charging() => "charging"
+    case Full() => "full"
+    case Unknown() => "unknown"
+    case Unplugged() => "unplugged"
+  }), BatteryState(_))
+
+  implicit val batteryLevelColumnType = MappedColumnType.base[BatteryLevel, Int](_.level, BatteryLevel(_))
+
 }
 
 
@@ -130,6 +151,11 @@ object IntervalBucketizer {
       pulse.datetime.getMillis / bucketInterval
     }
 
+    val merged = for {
+      head <- pulses
+      thisbucket = bucketNumber(head)
+      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
+    } yield (mergePulses(Seq(head) ++ rest))
 
     val pi = pulses.toIterator
     val merged = scala.collection.mutable.ArrayBuffer[Pulse]()
