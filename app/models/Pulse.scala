@@ -26,6 +26,15 @@ object Pulse {
     }
   }
 
+  // helper to get unix timestamps into joda DateTime format (i.e. * 1000ms)
+  object dateTime2timestamp extends Writes[DateTime] {
+    def writes(dt: DateTime) = {
+      val timestamp = dt.getMillis
+      JsNumber(timestamp)
+      JsSuccess(new DateTime(timestamp * 1000L))
+    }
+  }
+
   // helper for when location data isn't nested in location field
   object unnestedLocationReads extends Reads[Location] {
     def reads(json: JsValue) = {
