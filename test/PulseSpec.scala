@@ -56,10 +56,10 @@ class PulseSpec extends PlaySpec {
     }
 
     "deserialize from JSON as expected" in {
-      println("expectedJsValue: " + expectedJsValue)
+//      println("expectedJsValue: " + expectedJsValue)
       val pulse = expectedJsValue.validate[Pulse]
-      println("expectedPulse: " + expectedPulse)
-      println("pulse: " + pulse)
+//      println("expectedPulse: " + expectedPulse)
+//      println("pulse: " + pulse)
       pulse.asOpt mustEqual (Some(expectedPulse))
 
       pulse.fold(errors => {
