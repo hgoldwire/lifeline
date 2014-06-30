@@ -6,6 +6,7 @@ import play.api.libs.functional.syntax._
 import play.api.db.slick.Config.driver.simple._
 import play.api.data.validation.ValidationError
 import models.Motion._
+import models.Battery._
 import org.joda.time.DateTime
 import com.github.tototoshi.slick.MySQLJodaSupport._
 
@@ -55,8 +56,8 @@ object Pulse {
 
   // helper for when battery data isn't nested in battery field
   val unnestedBatteryReads: Reads[Battery] = (
-    (JsPath \ 'batteryState).read[String] and
-      ((JsPath \ 'batteryLevel).read[Int] orElse (__ \ 'batteryLevel).read[String].map(_.toInt))
+    (JsPath \ 'batteryState).read[BatteryState] and
+      ((JsPath \ 'batteryLevel).read[BatteryLevel] orElse (__ \ 'batteryLevel).read[String].map(bl => BatteryLevel(bl.toInt)))
     )(Battery.apply _)
 
   implicit val pulseReads: Reads[Pulse] = (
@@ -96,9 +97,9 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
   def verticalAccuracy = column[Int]("vertical_accuracy")
 
-  def batteryState = column[String]("battery_state")
+  def batteryState = column[BatteryState]("battery_state")
 
-  def batteryLevel = column[Int]("battery_level")
+  def batteryLevel = column[BatteryLevel]("battery_level")
 
   def motionSpeed = column[Int]("motion_speed")
 
@@ -115,6 +116,17 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
   def location = (latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy) <>((Location.apply _).tupled, Location.unapply _)
 
   def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
+
+
+  implicit val batteryStateTypeMapper = MappedColumnType.base[BatteryState, String]((_ match {
+    case Charging() => "charging"
+    case Full() => "full"
+    case Unknown() => "unknown"
+    case Unplugged() => "unplugged"
+  }), BatteryState(_))
+
+  implicit val batteryLevelColumnType = MappedColumnType.base[BatteryLevel, Int](_.level, BatteryLevel(_))
+
 }
 
 
@@ -193,9 +205,10 @@ object IntervalBucketizer {
       Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)
     }
     def mergeBattery(batteries: Seq[Battery]) = {
-      val orderedStates = Seq("unplugged", "charging", "full", "unknown")
-      val batteryLevel: Int = batteries.map(_.level).sum / batteries.length
-      val batteryState: String = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse("unknown")
+      //      val orderedStates = Seq("unplugged", "charging", "full", "unknown")
+      val orderedStates: Seq[BatteryState] = Seq(Unplugged(), Charging(), Full(), Unknown())
+      val batteryLevel: BatteryLevel = BatteryLevel(batteries.map(_.level.level).sum / batteries.length)
+      val batteryState: BatteryState = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse(Unknown())
       Battery(batteryState, batteryLevel)
     }
 

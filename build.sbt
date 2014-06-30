@@ -10,7 +10,8 @@ libraryDependencies ++= Seq(
   "org.mongodb" %% "casbah" % "2.7.1",
   "joda-time" % "joda-time" % "2.3" withJavadoc() withSources(),
   "org.joda" % "joda-convert" % "1.5" withJavadoc() withSources(),
-  "com.github.tototoshi" %% "slick-joda-mapper" % "1.1.0" withJavadoc() withSources()
+  "com.github.tototoshi" %% "slick-joda-mapper" % "1.1.0" withJavadoc() withSources(),
+  "org.scalatestplus" % "play_2.10" % "1.0.1" % "test"
 )
 
 playScalaSettings
