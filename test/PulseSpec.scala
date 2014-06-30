@@ -35,7 +35,27 @@ class PulseSpec extends PlaySpec {
       | }
     """.stripMargin
 
+  var jsonUnNested =
+    """
+      | {
+      |   "sudid": "F4D4D3F1-9999-9999-9999-B0A88B846623",
+      |   "timestamp": 1397222150,
+      |   "deviceName": "mochaPhone",
+      |   "speed": 3,
+      |   "motion": [ "walking", "running"],
+      |   "longitude": -73.954239534283,
+      |   "horizontalAccuracy": 50,
+      |   "altitude": 29,
+      |   "latitude": 40.73021636348285,
+      |   "verticalAccuracy": 64,
+      |   "batteryState": "charging",
+      |   "batteryLevel": 60
+      | }
+    """.stripMargin
+
+
   val expectedJsValue = Json.parse(jsonString)
+  val expectedUnNestedJsValue = Json.parse(jsonUnNested)
 
   var expectedLocation = Location(40.73021636348285, -73.954239534283, 29, 50, 64)
   var expectedMotion = Motion(3, true, true, false)
@@ -56,10 +76,7 @@ class PulseSpec extends PlaySpec {
     }
 
     "deserialize from JSON as expected" in {
-//      println("expectedJsValue: " + expectedJsValue)
       val pulse = expectedJsValue.validate[Pulse]
-//      println("expectedPulse: " + expectedPulse)
-//      println("pulse: " + pulse)
       pulse.asOpt mustEqual (Some(expectedPulse))
 
       pulse.fold(errors => {
@@ -68,5 +85,17 @@ class PulseSpec extends PlaySpec {
         //        println(location)
       })
     }
+
+    "deserialize from un-nested JSON as expected" in {
+      val pulse = expectedUnNestedJsValue.validate[Pulse]
+      pulse.asOpt mustEqual (Some(expectedPulse))
+
+      pulse.fold(errors => {
+        //        println(errors)
+      }, pulse => {
+        //        println(location)
+      })
+    }
+
   }
 }
