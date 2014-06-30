@@ -27,11 +27,10 @@ object Pulse {
   }
 
   // helper to get unix timestamps into joda DateTime format (i.e. * 1000ms)
-  object dateTime2timestamp extends Writes[DateTime] {
+  object datetime2timestamp extends Writes[DateTime] {
     def writes(dt: DateTime) = {
       val timestamp = dt.getMillis
-      JsNumber(timestamp)
-      JsSuccess(new DateTime(timestamp * 1000L))
+      JsNumber(timestamp /1000)
     }
   }
 
@@ -79,7 +78,7 @@ object Pulse {
     )(Pulse.apply _)
 
   implicit val pulseWrites: Writes[Pulse] = (
-    (JsPath \ 'timestamp).write[DateTime] and
+    (JsPath \ 'timestamp).write[DateTime](datetime2timestamp) and
       (JsPath \ 'sudid).write[String] and
       (JsPath \ 'deviceName).write[String] and
       (JsPath \ 'location).write[Location] and
@@ -151,12 +150,6 @@ object IntervalBucketizer {
       pulse.datetime.getMillis / bucketInterval
     }
 
-    val merged = for {
-      head <- pulses
-      thisbucket = bucketNumber(head)
-      rest = pulses.takeWhile(bucketNumber(_) == thisbucket)
-    } yield (mergePulses(Seq(head) ++ rest))
-
     val pi = pulses.toIterator
     val merged = scala.collection.mutable.ArrayBuffer[Pulse]()
     while (pi.hasNext) {
@@ -227,9 +220,9 @@ object IntervalBucketizer {
         Location(latitude, longitude, altitude, horizontalAccuracy, verticalAccuracy)
       }
       def mergeBattery(batteries: Seq[Battery]) = {
-        val orderedStates = Seq("unplugged", "charging", "full", "unknown")
-        val batteryLevel: Int = batteries.map(_.level).sum / batteries.length
-        val batteryState: String = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse("unknown")
+        val orderedStates: Seq[BatteryState] = Seq(Unplugged(), Charging(), Full(), Unknown())
+        val batteryLevel: BatteryLevel = BatteryLevel(batteries.map(_.level.level).sum / batteries.length)
+        val batteryState: BatteryState = orderedStates.find(s => batteries.map(_.state).contains(s)).getOrElse(Unknown())
         Battery(batteryState, batteryLevel)
       }
 
