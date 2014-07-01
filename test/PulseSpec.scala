@@ -50,15 +50,15 @@ class PulseSpec extends PlaySpec {
 
   val pulses = Seq(pulse1, pulse2, pulse3, pulse4)
 
-  "IntervalBucketizer" must {
+  "IntervalBucketizer.mergePulses" must {
     "return expected result for two canned pulses" in {
       var expectedLocation = Location(20.25, -20.25, 10, 15, 15)
       var expectedMotion = Motion(3, true, false, false)
       var expectedBattery = Battery(Unplugged(), BatteryLevel(62))
-      var expectedDateTime = new DateTime(pulses.slice(0,2).map(_.datetime.getMillis).sum / 2)
+      var expectedDateTime = new DateTime(pulses.slice(0, 2).map(_.datetime.getMillis).sum / 2)
       var expectedPulse = Pulse(expectedDateTime, sudid, deviceName, expectedLocation, expectedBattery, expectedMotion)
 
-      val merged: Pulse = IntervalBucketizer.mergePulses(pulses.slice(0,2))
+      val merged: Pulse = IntervalBucketizer.mergePulses(pulses.slice(0, 2))
       merged mustBe expectedPulse
     }
     "return expected result for four canned pulses" in {
@@ -70,6 +70,12 @@ class PulseSpec extends PlaySpec {
 
       val merged: Pulse = IntervalBucketizer.mergePulses(pulses)
       merged mustBe expectedPulse
+    }
+  }
+  "IntervalBucketizer.bucketize" must {
+    "return original data when interval same as source data (300s)" in {
+      val bucketized = IntervalBucketizer.bucketize(300, pulses).toList
+      bucketized mustBe pulses
     }
   }
 }

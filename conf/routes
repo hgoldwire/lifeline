@@ -9,6 +9,6 @@ GET        /                              controllers.Application.index
 GET        /assets/*file                  controllers.Assets.at(path="/public", file)
 PUT        /pulses/put                    controllers.PulseController.savePulse()
 GET        /pulses/put/importMongo        controllers.PulseController.importMongo
-GET        /pulses/get                   controllers.PulseController.get(deviceName: Option[String], interval: Option[Int])
+GET        /pulses/get                    controllers.PulseController.get(deviceName: Option[String], interval: Option[Int])
 
 
