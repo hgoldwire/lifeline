@@ -1,15 +1,14 @@
 
-package test
+package json
 
-import collection.mutable.Stack
-import org.scalatestplus.play.PlaySpec
-import org.scalatest.junit.JUnitRunner
+import models.{Battery, BatteryLevel, Charging}
 import org.junit.runner.RunWith
-import models.{BatteryLevel, Charging, Battery}
-import play.api.libs.json.{JsResult, Json}
+import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.play.PlaySpec
+import play.api.libs.json.Json
 
 @RunWith(classOf[JUnitRunner])
-class BatterySpec extends PlaySpec {
+class BatteryJsonSpec extends PlaySpec {
 
   var expectedBattery = Battery(Charging(), BatteryLevel(60))
   var expectedJson = """{"state":"charging","level":60}"""

@@ -1,12 +1,14 @@
+package json
 
-import models.{Motion, Location}
+
+import models.Motion
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
-class MotionSpec extends PlaySpec {
+class MotionJsonSpec extends PlaySpec {
 
   var expectedMotion = Motion(3, true, true, false)
 

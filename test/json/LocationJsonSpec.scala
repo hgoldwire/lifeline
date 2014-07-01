@@ -1,14 +1,14 @@
+package json
 
-import collection.mutable.Stack
-import org.scalatestplus.play.PlaySpec
-import org.scalatest.junit.JUnitRunner
+
+import models.Location
 import org.junit.runner.RunWith
-import models.{Location, Battery}
-import play.api.libs.json.Json
+import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
-class LocationSpec extends PlaySpec {
+class LocationJsonSpec extends PlaySpec {
 
   var expectedLocation = Location(40.73021636348285, -73.954239534283, 29, 50, 64)
 
