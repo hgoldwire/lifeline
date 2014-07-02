@@ -8,14 +8,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 
-object TestPulses {
-
-  val pulses = Seq(
-
-
-  )
-
-}
 
 @RunWith(classOf[JUnitRunner])
 class PulseSpec extends PlaySpec {
@@ -74,8 +66,31 @@ class PulseSpec extends PlaySpec {
   }
   "IntervalBucketizer.bucketize" must {
     "return original data when interval same as source data (300s)" in {
-      val bucketized = IntervalBucketizer.bucketize(300, pulses).toList
+      val bucketized = IntervalBucketizer.bucketize(300, pulses)
       bucketized mustBe pulses
+    }
+
+    "should contain two values when bucketInterval is 600s" in {
+      val bucketized = IntervalBucketizer.bucketize(600, pulses)
+      bucketized.length mustBe 2
+    }
+    "return expected result for four canned pulses" in {
+      val bucketizeLoc1 = Location(20.25, -20.25, 10, 15, 15)
+      val bucketizeLoc2 = Location(21.25, -21.25, 12, 35, 35)
+      var bucketizeMotion1 = Motion(3, true, false, false)
+      var bucketizeMotion2 = Motion(1, true, true, false)
+      var bucketizeBattery1 = Battery(Unplugged(), BatteryLevel(62))
+      var bucketizeBattery2 = Battery(Full(), BatteryLevel(97))
+      var bucketizeDateTime1 = new DateTime(1397222150000L)
+      var bucketizeDateTime2 = new DateTime(1397222750000L)
+      var bucketizePulse1 = Pulse(bucketizeDateTime1, sudid, deviceName, bucketizeLoc1, bucketizeBattery1, bucketizeMotion1)
+      var bucketizePulse2 = Pulse(bucketizeDateTime2, sudid, deviceName, bucketizeLoc2, bucketizeBattery2, bucketizeMotion2)
+
+      val expectedPulses = Seq(bucketizePulse1, bucketizePulse2)
+      val mergedPulses = IntervalBucketizer.bucketize(600, pulses)
+
+      mergedPulses mustBe expectedPulses
     }
   }
 }
+

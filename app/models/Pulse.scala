@@ -147,7 +147,7 @@ object IntervalBucketizer {
   def bucketize(bucketInterval: Int, pulses: Seq[Pulse]): Seq[Pulse] = {
 
     def bucketNumber(pulse: Pulse): Long = {
-      pulse.datetime.getMillis / bucketInterval
+      pulse.datetime.getMillis / 1000 / bucketInterval
     }
 
     def merge(p: Seq[Pulse], acc: Seq[Pulse]): Seq[Pulse] = {
@@ -155,11 +155,8 @@ object IntervalBucketizer {
         case Nil => acc
         case _ => {
           val head = p.head
-          println("head: " + head)
           val headBucket = bucketNumber(head)
-          println("head bucket: " + headBucket)
           val (fullHead, tail) = p.span(bucketNumber(_) == headBucket)
-          println("full head: " + fullHead)
           val merged = mergePulses(fullHead)
           merge(tail, acc :+ merged)
         }
