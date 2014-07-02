@@ -144,46 +144,48 @@ object IntervalBucketizer {
   * Massage a list of Pulses into no more than 1 sample per bucketInterval.
   * If multiple pulses exist within the interval, values are chosen using mergePulses.
   */
-  def bucketize(bucketInterval: Int, pulses: Traversable[Pulse]): Seq[Pulse] = {
+  def bucketize(bucketInterval: Int, pulses: Seq[Pulse]): Seq[Pulse] = {
 
     def bucketNumber(pulse: Pulse): Long = {
       pulse.datetime.getMillis / bucketInterval
     }
 
-    val pi = pulses.toIterator.buffered
-    val merged = scala.collection.mutable.ArrayBuffer[Pulse]()
-    while (pi.hasNext) {
-      val head = pi.next()
-      println("HEAD:" + head)
-      val thisBucket = bucketNumber(head)
-      println("this bucket:" + thisBucket)
-      val nextHead = pi.head
-      val tail = pi.takeWhile(p => bucketNumber(nextHead) == thisBucket)
-      println("TAIL:" + tail)
-      merged += mergePulses(Seq(head) ++ tail)
+    def merge(p: Seq[Pulse], acc: Seq[Pulse]): Seq[Pulse] = {
+      p match {
+        case Nil => acc
+        case _ => {
+          val head = p.head
+          println("head: " + head)
+          val headBucket = bucketNumber(head)
+          println("head bucket: " + headBucket)
+          val (fullHead, tail) = p.span(bucketNumber(_) == headBucket)
+          println("full head: " + fullHead)
+          val merged = mergePulses(fullHead)
+          merge(tail, acc :+ merged)
+        }
+      }
     }
-    merged
+    merge(pulses, Seq[Pulse]())
   }
 
-
   /*
-   * merges multiple pulses according to these rules:
-   *   sudid: no change
-   *   deviceName: no change
-   *   timestamp: average of values
-   *
-   *   speed: highest value
-   *   motion: include all unique values
-   *
-   *   latitude: average of values
-   *   longitude: average of values
-   *   altitude: average of values
-   *   horizontalAccuracy: average of values
-   *   verticalAccuracy: average of values
-   *
-   *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
-   *   batteryLevel: average of values
-   */
+ * merges multiple pulses according to these rules:
+ *   sudid: no change
+ *   deviceName: no change
+ *   timestamp: average of values
+ *
+ *   speed: highest value
+ *   motion: include all unique values
+ *
+ *   latitude: average of values
+ *   longitude: average of values
+ *   altitude: average of values
+ *   horizontalAccuracy: average of values
+ *   verticalAccuracy: average of values
+ *
+ *   batteryState: first value that appears in the sequence ["unplugged", "charging", "full", "unknown"]
+ *   batteryLevel: average of values
+ */
   def mergePulses(pulses: Seq[Pulse]) = {
     def avgLong(s: Seq[Long]) = {
       s.sum / s.length
@@ -219,7 +221,7 @@ object IntervalBucketizer {
       Battery(batteryState, batteryLevel)
     }
 
-//    println("merging " + pulses.length + " pulses")
+    //    println("merging " + pulses.length + " pulses")
     val datetime = new DateTime(avgLong(pulses.map(_.datetime.getMillis)))
     val sudid = pulses.head.sudid
     val deviceName = pulses.head.deviceName
@@ -228,5 +230,6 @@ object IntervalBucketizer {
     val motion = mergeMotion(pulses.map(_.motion))
     Pulse(datetime, sudid, deviceName, location, battery, motion)
   }
+
 
 }
