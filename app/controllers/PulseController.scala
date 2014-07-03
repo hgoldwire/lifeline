@@ -31,13 +31,16 @@ object PulseController extends Controller {
         } yield (p)
         case None => Pulses
       }
-      println("BEFORE length: " + pulses.list.length)
 
       val bucketized = interval match {
-        case Some(i) => IntervalBucketizer.bucketize(i, pulses.list())
+        case Some(i) => {
+          println("BEFORE length: " + pulses.list.length)
+          val buckets = IntervalBucketizer.bucketize(i, pulses.list())
+          println("BUCKETIZED length: " + buckets.length)
+          buckets
+        }
         case None => pulses.list
       }
-      println("BUCKETIZED length: " + bucketized.length)
 
       Ok(Json.toJson(bucketized))
 //      Ok(toJson(pulses.list))

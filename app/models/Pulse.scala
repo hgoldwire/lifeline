@@ -125,6 +125,12 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
 
   def * = (datetime, sudid, deviceName, location, battery, motion) <>((Pulse.apply _).tupled, Pulse.unapply _)
 
+  def idx_devicename = index("idx_devicename", deviceName, unique = false)
+
+  def idx_sudid = index("idx_sudid", sudid, unique = false)
+
+  def idx_datetime = index("idx_datetime", sudid, unique = false)
+
 
   implicit val batteryStateTypeMapper = MappedColumnType.base[BatteryState, String]((_ match {
     case Charging() => "charging"
