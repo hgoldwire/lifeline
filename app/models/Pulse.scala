@@ -140,7 +140,6 @@ class PulsesTable(tag: Tag) extends Table[Pulse](tag, "PULSE") {
   }), BatteryState(_))
 
   implicit val batteryLevelColumnType = MappedColumnType.base[BatteryLevel, Int](_.level, BatteryLevel(_))
-
 }
 
 

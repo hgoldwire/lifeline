@@ -11,4 +11,4 @@ PUT        /pulses/put                    controllers.PulseController.savePulse(
 GET        /pulses/put/importMongo        controllers.PulseController.importMongo
 GET        /pulses/get                    controllers.PulseController.get(deviceName: Option[String], interval: Option[Int])
 
-
+GET        /dashboard/:sudid              controllers.DashboardController.get(sudid: String)

@@ -1,0 +1,54 @@
+@(deviceNames: List[String])
+
+<div id="top-nav" class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-toggle"></span>
+            </button>
+            <a class="navbar-brand" href="#">Control Panel</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" role="button" data-toggle="dropdown" href="#">
+                        <i class="glyphicon glyphicon-user"></i> Admin <span class="caret"></span></a>
+                    <ul id="g-account-menu" class="dropdown-menu" role="menu">
+                        <li><a href='/stat?where={%22dataType%22:%22score%22,%22deviceName%22:%22ZiPhone%22}'>Mock Data Endpoint</a></li>
+                        <li><a href="/stat/generatedayandweek">Generate Week Data</a></li>
+                        <li><a href="/generatedemoscores/">Generate Demo Scores</a></li>
+                        <li><a href='/computeconfidencescore?where={"deviceName":"ZiPhone"}'>Compute Confidence Score</a></li>
+                        <li><a href='/computeconfidencescoreforeverone'>Compute Confidence Score Fore Everone</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" role="button" data-toggle="dropdown" href="#">
+                        <i class="glyphicon glyphicon-user"></i> Change User <span class="caret"></span></a>
+                    <ul id="g-account-menu" class="dropdown-menu" role="menu">
+                        @for(dn <- deviceNames) {
+                            <li>@dn</li>
+                        }
+                    </ul>
+                        <% _.each(otherprofiles, function (otherprofile) { %>
+                        <li><a href='/<%= viewname %>?where={"deviceName":"<%= escape(otherprofile.deviceName) %>"}'><%= otherprofile.deviceName %></a></li>
+                        <% }) %>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" role="button" data-toggle="dropdown" href="#">
+                        <i class="glyphicon glyphicon-user"></i>Navigation <span class="caret"></span></a>
+                    <ul id="g-account-menu" class="dropdown-menu" role="menu">
+                        <li><a href="/map">Map</a></li>
+                        <li><a href='dashboard?where={"name":"ZiPhone"}'>Dashboard</a></li>
+                        <li><a href='/activity?where={"deviceName":"ZiPhone"}'>Activity</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+    </div> <!-- /container -->
+</div>
